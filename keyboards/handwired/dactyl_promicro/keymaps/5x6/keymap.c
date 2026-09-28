@@ -1,28 +1,30 @@
 #include QMK_KEYBOARD_H
-//#include "luna.c"
+#include "bullfinch.h"
+#ifdef RAW_ENABLE
+#    include "raw_hid.h"
+#endif
 
 #define TAPPING_TERM 200
 #define IGNORE_MOD_TAP_INTERRUPT
-#define OLED_ENABLE_TIMEOUT
-
-#define LAYER_LOCK_IDLE_TIMEOUT 60000 // TUrn off after 60 seconds.
 
 #define _QWERTY 0
 #define _LOWER 1
 #define _RAISE 2
+#define _NUM 3      // цифровой блок, включается TG(_NUM) из слоя ADJ
+#define _ADJ 4      // LOWER + RAISE одновременно
 
 #define RAISE MO(_RAISE)
 #define LOWER MO(_LOWER)
 
 #define SFTLLCK LSFT_T(KC_0)
 
-char last_key[10] = "None";
-//char wpm_str[4];
-//uint8_t current_wpm = 0;
-int oled_timer = 0;
-
 enum custom_keycodes {
     DRAG_SCROLL = RAISE,
+};
+
+// Отдельный enum: DRAG_SCROLL выше равен RAISE, поэтому SAFE_RANGE считаем отсюда
+enum bullfinch_keycodes {
+    SKY_NEXT = SAFE_RANGE,   // сменить время суток: ночь → рассвет → день → закат
 };
 
 bool set_scrolling = false;
@@ -37,64 +39,22 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
     return mouse_report;
 }
 
+#ifdef OLED_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     return OLED_ROTATION_90;
 }
-/*
-static void render_wpm(void) {
-    oled_write(" WPM\n", false);
-    wpm_str[3] = '\0';
-    wpm_str[2] = '0' + current_wpm % 10;
-    wpm_str[1] = '0' + (current_wpm /=10) % 10;
-    wpm_str[0] = '0' + current_wpm / 10;
-    oled_write(" ", false);
-    oled_write(wpm_str, false);
-}
-*/
 
 bool oled_task_user(void) {
-    oled_write_P(PSTR("\n"), false);
-    switch (get_highest_layer(layer_state)) {
-        case _QWERTY:
-            oled_write_P(PSTR("QWR\n"), false);
-            break;
-        case _LOWER:
-            oled_write_P(PSTR("LWR\n"), false);
-            break;
-        case _RAISE:
-            oled_write_P(PSTR("RSE\n"), false);
-            break;
-        default:
-            // Or use the write_ln shortcut over adding '\n' to the end of your string
-            oled_write_P(PSTR("UND\n"), false);
-    }
-    // Host Keyboard LED Status
-    led_t led_state = host_keyboard_led_state();
-    oled_write_ln_P(led_state.num_lock ? PSTR("NUM \n") : PSTR("    \n"), false);
-    oled_write_ln_P(led_state.caps_lock ? PSTR("CAP \n") : PSTR("    \n"), false);
-    oled_write_ln_P(led_state.scroll_lock ? PSTR("SCR \n") : PSTR("    \n"), false);
-    oled_write(last_key, false);
-    oled_write("\n", false);
-    //render_wpm();
-    //int x, y;
-    //x = 64;
-    //y = 0;
-    //render_luna(x, y);
-    return false;
-    /*
-    if (timer_elapsed32(oled_timer) > 60000) {
-        oled_off();
-        return false;
-    }
-    else {
-       if (!is_oled_on()) 
-            oled_on();
-        else
-            oled_render_idle();
-        return false;
-    }
-    */
+    return bullfinch_render();
 }
+#endif
+
+#ifdef RAW_ENABLE
+// Компьютер присылает пакет: 'T', час (0..23)
+void raw_hid_receive(uint8_t *data, uint8_t length) {
+    if (length >= 2 && data[0] == 'T') bullfinch_set_hour(data[1]);
+}
+#endif
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_QWERTY] = LAYOUT_5x6(
@@ -129,58 +89,48 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                                   _______,KC_TRNS,            _______,_______,
                                                   _______,_______,            _______, KC_DEL,
                                                   _______,_______,            _______,_______
+    ),
+
+    // Цифровой блок (фиксируется): справа нумпад, TG(_NUM) — выход
+    [_NUM] = LAYOUT_5x6(
+        _______,_______,_______,_______,_______,_______,                        _______,KC_NUM ,KC_PSLS,KC_PAST,KC_PMNS,_______,
+        _______,_______,_______,_______,_______,_______,                        _______, KC_P7 , KC_P8 , KC_P9 ,KC_PPLS,_______,
+        _______,_______,_______,_______,_______,_______,                        _______, KC_P4 , KC_P5 , KC_P6 ,KC_PPLS,_______,
+        _______,_______,_______,_______,_______,_______,                        _______, KC_P1 , KC_P2 , KC_P3 ,KC_PENT,_______,
+                                                _______,_______,            KC_P0  ,KC_PDOT,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,TG(_NUM)
+    ),
+
+    // Настройки: небо, цифровой блок, прошивка
+    [_ADJ] = LAYOUT_5x6(
+        QK_BOOT,_______,_______,_______,_______,_______,                        _______,_______,_______,_______,_______,QK_BOOT,
+        _______,_______,_______,_______,_______,_______,                        _______,TG(_NUM),_______,_______,_______,_______,
+        _______,_______,_______,_______,_______,SKY_NEXT,                       SKY_NEXT,_______,_______,_______,_______,_______,
+        _______,_______,_______,_______,_______,_______,                        _______,_______,_______,_______,_______,_______,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,_______
     )
 };
 
-void update_last_key(uint16_t keycode) {
-    switch (keycode) {
-        case KC_A ... KC_Z:
-            snprintf(last_key, sizeof(last_key), "%u", keycode);
-            break;
-        case KC_1 ... KC_0:
-            snprintf(last_key, sizeof(last_key), "%u", keycode);
-            break;
-        case KC_ENT:
-            snprintf(last_key, sizeof(last_key), "Enter");
-            break;
-        case KC_SPC:
-            snprintf(last_key, sizeof(last_key), "Space");
-            break;
-        case KC_ESC:
-            snprintf(last_key, sizeof(last_key), "Esc");
-            break;
-        case KC_PSCR:
-            snprintf(last_key, sizeof(last_key), "PrtSc");
-            break;
-        case KC_DEL:
-            snprintf(last_key, sizeof(last_key), "Del");
-            break;
-        case KC_END:
-            snprintf(last_key, sizeof(last_key), "End");
-            break;
-        case KC_BSPC:
-            snprintf(last_key, sizeof(last_key), "BSPC");
-            break;
-        case KC_TAB:
-            snprintf(last_key, sizeof(last_key), "Tab");
-            break;
-        default:
-            snprintf(last_key, sizeof(last_key), "Other");
-            break;
-    }
+layer_state_t layer_state_set_user(layer_state_t state) {
+    return update_tri_layer_state(state, _LOWER, _RAISE, _ADJ);
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (record->event.pressed) {
-        oled_timer = timer_read32();
-        //current_wpm = get_current_wpm();
-        //set_keylog(keycode, record);
-        update_last_key(keycode);
-    }
+#ifdef OLED_ENABLE
+    bullfinch_process_record(keycode, record);
+#endif
     if (keycode == DRAG_SCROLL && record->event.pressed) {
         set_scrolling = !set_scrolling;
     }
     switch (keycode) {
+        case SKY_NEXT:
+            if (record->event.pressed) bullfinch_next_sky();
+            return false;
         case SFTLLCK:
             if (record->tap.count) {
                 if (record->event.pressed) {

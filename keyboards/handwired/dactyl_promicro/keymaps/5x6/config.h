@@ -15,15 +15,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//#pragma once
-
-// #define MASTER_RIGHT
-//#define EE_HANDS
-// Rows are doubled-up
-
 #pragma once
 #define LANG_USE_ANSI
-//#define OLED_TIMEOUT 120000
+
+// ---- OLED / снегирь ----
+// Таймаут стандартного драйвера выключаем: экраном управляет bullfinch.c
+// (засыпание через BF_SLEEP_MS, выключение через BF_OFF_MS)
+#define OLED_TIMEOUT 0
 //#define OLED_BRIGHTNESS 120
-#define SPLIT_WPM_ENABLE
-//#define OLED_FONT_H "glcdfont.c"
+//#define BF_SLEEP_MS 30000
+//#define BF_OFF_MS   300000
+
+// Если OLED стоит на второй (не подключённой к USB) половине —
+// эти строки передают ей слой, локи и активность
+#define SPLIT_LAYER_STATE_ENABLE
+#define SPLIT_LED_STATE_ENABLE
+#define SPLIT_ACTIVITY_ENABLE

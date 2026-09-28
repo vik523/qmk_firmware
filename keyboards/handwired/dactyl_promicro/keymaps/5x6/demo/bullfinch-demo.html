@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Снегирь на OLED — демо прошивки Dactyl 5x6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1c2e; --surface: #17283e; --line: #2a3f5c; --text: #e8eff7; --muted: #93a7bf;
+  --accent: #d9483b; --accent-soft: rgba(217, 72, 59, .16); --pcb: #173a7a; --pcb-edge: #0f2a5c;
+  --pin: #c9a54a; --glass: #03060d;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #eef3f8; --surface: #ffffff; --line: #cfdbe8; --text: #13233a; --muted: #5a6f88;
+    --accent: #b8342a; --accent-soft: rgba(184, 52, 42, .1);
+  }
+}
+:root[data-theme="light"] {
+  --bg: #eef3f8; --surface: #ffffff; --line: #cfdbe8; --text: #13233a; --muted: #5a6f88;
+  --accent: #b8342a; --accent-soft: rgba(184, 52, 42, .1);
+}
+:root[data-theme="dark"] {
+  --bg: #0f1c2e; --surface: #17283e; --line: #2a3f5c; --text: #e8eff7; --muted: #93a7bf;
+  --accent: #d9483b; --accent-soft: rgba(217, 72, 59, .16);
+}
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.55 "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 48px; }
+header { max-width: 62ch; margin-bottom: 28px; }
+h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; font-weight: 600; margin: 0 0 10px; letter-spacing: -.01em; }
+header p { margin: 0; color: var(--muted); }
+
+.stage { display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: start; }
+@media (max-width: 720px) { .stage { grid-template-columns: 1fr; justify-items: center; gap: 28px; } }
+
+/* Модуль OLED 0.91" */
+.module {
+  background: var(--pcb); border: 1px solid var(--pcb-edge); border-radius: 10px;
+  padding: 10px 16px 22px; box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.pins { display: flex; gap: 10px; }
+.pin { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; color: #b9c9e6; }
+.pin i { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle, #1b2437 35%, var(--pin) 38%); }
+.glass { background: var(--glass); padding: 10px 8px; border-radius: 3px; border: 1px solid #000; line-height: 0; }
+canvas { width: 128px; height: 512px; image-rendering: pixelated; display: block; }
+.screen-note { font-size: 13px; color: var(--muted); text-align: center; min-height: 1.5em; margin-top: 12px; max-width: 170px; }
+
+/* Панель */
+.panel { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+.group h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.group p { font-size: 14px; color: var(--muted); margin: 0 0 10px; max-width: 58ch; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 13px; cursor: pointer;
+  min-height: 36px;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.keys button { min-width: 44px; }
+.stat { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.legend { margin-top: 44px; border-top: 1px solid var(--line); padding-top: 24px; }
+.legend h2 { font-size: 18px; font-weight: 600; margin: 0 0 14px; }
+.legend dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 22px; margin: 0; max-width: 70ch; }
+.legend dt { font-weight: 500; }
+.legend dd { margin: 0; color: var(--muted); }
+.error { color: var(--accent); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Снегирь на OLED</h1>
+    <p>Живое демо экрана для Dactyl 5x6. Картинку рисует тот же код, что прошит в клавиатуру: bullfinch.c, собранный в WebAssembly. Нажимайте клавиши и переключайте слои — экран отреагирует так же, как на клавиатуре.</p>
+  </header>
+
+  <div class="stage">
+    <div>
+      <div class="module" aria-label="OLED-модуль 128×32, повёрнутый вертикально">
+        <div class="pins" aria-hidden="true">
+          <span class="pin"><i></i>GND</span><span class="pin"><i></i>VCC</span>
+          <span class="pin"><i></i>SCL</span><span class="pin"><i></i>SDA</span>
+        </div>
+        <div class="glass"><canvas id="oled" width="32" height="128" role="img" aria-label="Экран клавиатуры"></canvas></div>
+      </div>
+      <div class="screen-note" id="note" aria-live="polite"></div>
+    </div>
+
+    <div class="panel">
+      <section class="group">
+        <h2>Слой</h2>
+        <p>На клавиатуре: LOWER и RAISE — большие пальцы, оба сразу — ADJ, цифровой блок включается из ADJ.</p>
+        <div class="row" id="layers" role="group" aria-label="Слой"></div>
+      </section>
+
+      <section class="group">
+        <h2>Индикаторы</h2>
+        <p>Работают и от ваших Caps Lock, Num Lock и Scroll Lock.</p>
+        <div class="row" id="locks" role="group" aria-label="Индикаторы"></div>
+      </section>
+
+      <section class="group">
+        <h2>Время суток</h2>
+        <p>На клавиатуре небо меняет клавиша SKY_NEXT в слое ADJ или скрипт bullfinch_time.py по часам компьютера.</p>
+        <div class="row" id="sky" role="group" aria-label="Время суток"></div>
+      </section>
+
+      <section class="group">
+        <h2>Нажатия</h2>
+        <p>Печатайте на своей клавиатуре — последняя клавиша появится на сугробе. На телефоне нажмите кнопки ниже.</p>
+        <div class="row keys" id="keys"></div>
+      </section>
+
+      <section class="group">
+        <h2>Простой</h2>
+        <p>Через 30 секунд без нажатий снегирь засыпает, через 5 минут экран гаснет.</p>
+        <div class="row">
+          <button id="sleep">Промотать до сна</button>
+          <button id="off">Промотать до выключения</button>
+        </div>
+        <p class="stat" id="idle" style="margin-top:10px"></p>
+      </section>
+    </div>
+  </div>
+
+  <section class="legend">
+    <h2>Что означает каждая деталь</h2>
+    <dl>
+      <dt>Где сидит снегирь</dt><dd>Слой: средняя ветка — QWR, нижняя — LWR, верхняя — RSE, с ягодой в клюве — NUM, в полёте — ADJ. При смене слоя он перелетает.</dd>
+      <dt>Снежная шапка</dt><dd>Включён Caps Lock.</dd>
+      <dt>Светящиеся ягоды</dt><dd>Включён Num Lock.</dd>
+      <dt>Фонарик под веткой</dt><dd>Включён Scroll Lock.</dd>
+      <dt>Надпись на сугробе</dt><dd>Последняя нажатая клавиша.</dd>
+      <dt>Небо</dt><dd>Ночь, рассвет, день или закат.</dd>
+      <dt>Падающая ягода</dt><dd>Просто так, раз в 45 секунд.</dd>
+    </dl>
+  </section>
+</div>
+
+<script id="wasm" type="application/octet-stream">AGFzbQEAAAABKghgAX8Bf2ADf39/AX9gAX8AYAABf2ADf39/AGAAAGAEf39/fwBgAn9/AAMcGwABAAACAwMDAAMEBQMDAwMFAgYHBQIDBAQHBwQFAXABAQEFAwEAAgYIAX8BQZCyBAsHXAcGbWVtb3J5AgALZGVtb19zY3JlZW4ADgpkZW1vX2lzX29uAA8NZGVtb19za3lfbmV4dAAQDWRlbW9fc2V0X2hvdXIAEQlkZW1vX3RpY2sAEghkZW1vX2tleQATCttRGycBA39BACEBA0AgACABaiECIAFBAWoiAyEBIAItAAANAAsgA0F/agvHAQEDfwJAIAJFDQACQAJAIAJBB3EiAw0AIAAhBCACIQUMAQsgAkF4cSEFIAAhBANAIAQgAS0AADoAACAEQQFqIQQgAUEBaiEBIANBf2oiAw0ACwsgAkEISQ0AA0AgBCABLQAAOgAAIAQgAS0AAToAASAEIAEtAAI6AAIgBCABLQADOgADIAQgAS0ABDoABCAEIAEtAAU6AAUgBCABLQAGOgAGIAQgAS0ABzoAByAEQQhqIQQgAUEIaiEBIAVBeGoiBQ0ACwsgAAsRAQF/IAAgAEEfdSIBcyABawuAAQEDf0EfIQECQANAAkAgACABQf8BcXZBAXFFDQAgASECDAILIAAgAUF/aiICQf8BcXZBAXENASAAIAFBfmoiAkH/AXEiA3ZBAXENAQJAIANBAk8NAEEAIQIMAgsgACABQX1qIgJB/wFxdkEBcQ0BIAFBfGohAQwACwsgAkH/AXELEAAgAEEALQDQkYCAADoAAAsLAEEALQDRkYCAAAsEAEEACwsAQQAvAdKRgIAACxMAQQAvAdKRgIAAIABrQf//A3ELCwBBACgC1JGAgAALKAACQCAAQR9LDQAgAcBBAEgNACABQQV0IABqQeCRgIAAaiACOgAACwsuAQF/QYBgIQADQCAAQeCxgIAAakIANwAAIABBCGoiAA0AC0EAQQA6AOCxgIAACxEAQQAtAOCxgIAAQX9zQQFxCw8AQQBBAToA4LGAgABBAQsIAEHgkYCAAAsRAEEALQDgsYCAAEF/c0EBcQsIABCUgICAAAsOACAAQf8BcRCVgICAAAs9AEEAIAE2AtSRgIAAQQAgADsB0pGAgABBACADOgDQkYCAAEEAQQEgAnRBACACGzYC5LGAgAAQloCAgAAaC1YBAX8jgICAgABBEGsiAiSAgICAAEEAIAFBAEdBAXQ6ANGRgIAAIAJBgQI7AA4gAEH//wNxIAJBDmoQmoCAgABBAEEAOgDRkYCAACACQRBqJICAgIAACxoAQQBBAC0A6LGAgABBAWpBA3E6AOixgIAAC0kBAX9BASEBAkAgAEF7akH/AXFBA0kNAEECIQEgAEF4akH/AXFBCkkNAEEDQQAgAEFuakH/AXFBA0kbIQELQQAgAToA6LGAgAALjDwBF38jgICAgABBEGsiACSAgICAAAJAAkAQiYCAgAAiAUHhpxJJDQAQjICAgABFDQEQjYCAgAAaDAELQQAvAeqxgIAAEIiAgIAAQeQASQ0AQQAQh4CAgAA7AeqxgIAAQQBBAC8B7LGAgABBAWo7AeyxgIAAAkBBAC0A7rGAgAANAEEAQoWg7LCQgseDEjcA77GAgABBAEKAuui5xaCIn9sANwD3sYCAAEEAQQE6AO6xgIAACxCLgICAACAAQQ9qEISAgIAAQQRBCEEALQDosYCAAEECRhshAkEALQDssYCAACEDQQAhBANAAkAgAyAEakEBcQ0AIARB97GAgABqIgVBACAFLQAAQQFqIgUgBUH/AXFB7wBLGzoAAAsCQCAEQQNsIANqQf8BcUENcA0AIARB77GAgABqIgUgBS0AAEEBQR8gBEEBcRtqQR9xOgAACwJAIAIgBE0NACAEQe+xgIAAai0AACIFQR9LDQAgBEH3sYCAAGotAAAiBsBBAEgNACAFIAZB/wFxQQEQioCAgABBAC0A7LGAgAAhAwsgBEEBaiIEQQhHDQALAkACQAJAAkACQAJAQQAtAOixgIAAQX9qDgMAAQMCC0EKQRhBARCKgICAAEEHQRlBARCKgICAAEEIQRlBARCKgICAAEEJQRlBARCKgICAAEEKQRlBARCKgICAAEELQRlBARCKgICAAEEMQRlBARCKgICAAEENQRlBARCKgICAAEEGQRpBARCKgICAAEEHQRpBARCKgICAAEEIQRpBARCKgICAAEEJQRpBARCKgICAAEEKQRpBARCKgICAAEELQRpBARCKgICAAEEMQRpBARCKgICAAEENQRpBARCKgICAAEEOQRpBARCKgICAAEEFQRtBARCKgICAAEEGQRtBARCKgICAAEEHQRtBARCKgICAAEEIQRtBARCKgICAAEEJQRtBARCKgICAAEEKQRtBARCKgICAAEELQRtBARCKgICAAEEMQRtBARCKgICAAEENQRtBARCKgICAAEEOQRtBARCKgICAAEEPQRtBARCKgICAAEEFQRxBARCKgICAAEEGQRxBARCKgICAAEEHQRxBARCKgICAAEEIQRxBARCKgICAAEEJQRxBARCKgICAAEEKQRxBARCKgICAAEELQRxBARCKgICAAEEMQRxBARCKgICAAEENQRxBARCKgICAAEEOQRxBARCKgICAAEEPQRxBARCKgICAAEEFQR1BARCKgICAAEEGQR1BARCKgICAAEEHQR1BARCKgICAAEEIQR1BARCKgICAAEEJQR1BARCKgICAAEEKQR1BARCKgICAAEELQR1BARCKgICAAEEMQR1BARCKgICAAEENQR1BARCKgICAAEEOQR1BARCKgICAAEEPQR1BARCKgICAAEEEQR5BARCKgICAAEEFQR5BARCKgICAAEEGQR5BARCKgICAAEEHQR5BARCKgICAAEEIQR5BARCKgICAAEEJQR5BARCKgICAAEEKQR5BARCKgICAAEELQR5BARCKgICAAEEMQR5BARCKgICAAEENQR5BARCKgICAAEEOQR5BARCKgICAAEEPQR5BARCKgICAAEEQQR5BARCKgICAAEEALwHssYCAAEEHcUEFTw0DQQAQgoCAgAAiB0EAQQIQgoCAgABBEHRrQRB1IgZqIQIgB8EhCEETIQNBCiEEA0ACQCADQf//A3EiBUH/AEsNACAEQf//A3FBH0sNACAEQf8BcSADQf8BcUEBEIqAgIAACwJAAkAgBUEVRw0AIARB//8DcUEKRg0BCyAGQQAgBiACQQF0wSIFTCIJGyACaiAHQQAgCCAFTiIFG2ohAiADIAVqIQMgBCAJayEEDAELC0ECIQRBAhCCgICAACIHQQBBARCCgICAAEEQdGtBEHUiBmohAiAHwSEIQRghAwNAAkAgA0H//wNxIgVB/wBLDQAgBEH//wNxQR9LDQAgBEH/AXEgA0H/AXFBARCKgICAAAsCQAJAIAVBGUcNACAEQf//A3FBBEYNAQsgBkEAIAYgAkEBdMEiBUwiCRsgAmogB0EAIAggBU4iBRtqIQIgAyAFaiEDIAQgCWohBAwBCwtBfhCCgICAACIHQQBBARCCgICAAEEQdGtBEHUi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Wn1fnjylUqsqACQiKUoi1VXQBRQAwAECAKQSb3uXLOdzz3LJW89573lScu97z3sQBBQEERU4DlREwnJje+0rrmsneW5rp3mkeW957VuXdG8SrVsnSe1fbWtve+R7eXuta895knRvW2pb/VutWpJap3ImaYlISzIAKgcAAEQAAAAAAAC6JAAAAAAAAAAAAAAAAAAA2RcAAAAAAAAAAAAA9E0AAAAAki4AAAAAAAAAAAAAkzWSJNZkgAcAQcARCwQBAAAAAMEDBG5hbWUADw5idWxsZmluY2gud2FzbQGBAxsABnN0cmxlbgEGbWVtY3B5AgNhYnMDEWdldF9oaWdoZXN0X2xheWVyBBdob3N0X2tleWJvYXJkX2xlZF9zdGF0ZQUIZ2V0X21vZHMGEGdldF9vbmVzaG90X21vZHMHCnRpbWVyX3JlYWQIDXRpbWVyX2VsYXBzZWQJG2xhc3RfaW5wdXRfYWN0aXZpdHlfZWxhcHNlZAoQb2xlZF93cml0ZV9waXhlbAsKb2xlZF9jbGVhcgwKaXNfb2xlZF9vbg0Ib2xlZF9vZmYOC2RlbW9fc2NyZWVuDwpkZW1vX2lzX29uEA1kZW1vX3NreV9uZXh0EQ1kZW1vX3NldF9ob3VyEglkZW1vX3RpY2sTCGRlbW9fa2V5FBJidWxsZmluY2hfbmV4dF9za3kVEmJ1bGxmaW5jaF9zZXRfaG91chYQYnVsbGZpbmNoX3JlbmRlchcJZHJhd19jaGFyGAViZXJyeRkDaGF0GhhidWxsZmluY2hfcHJvY2Vzc19yZWNvcmQHEgEAD19fc3RhY2tfcG9pbnRlcgkRAgAHLnJvZGF0YQEFLmRhdGEAOAlwcm9kdWNlcnMBDHByb2Nlc3NlZC1ieQEMVWJ1bnR1IGNsYW5nETE4LjEuMyAoMXVidW50dTEpACwPdGFyZ2V0X2ZlYXR1cmVzAisPbXV0YWJsZS1nbG9iYWxzKwhzaWduLWV4dA==</script>
+<script>
+(() => {
+  const SLEEP_MS = 30000, OFF_MS = 300000;
+  const note = document.getElementById('note');
+  const state = { layer: 0, num: false, caps: false, scroll: false, last: performance.now() };
+  let ex;
+
+  // --- кнопки ---
+  function group(id, items, isOn, onClick) {
+    const box = document.getElementById(id);
+    const btns = items.map(([label, val]) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.addEventListener('click', () => { onClick(val); refresh(); touch(); });
+      box.appendChild(b);
+      return [b, val];
+    });
+    const refresh = () => btns.forEach(([b, v]) => b.setAttribute('aria-pressed', String(isOn(v))));
+    refresh();
+    return refresh;
+  }
+  const refreshLayers = group('layers', [['QWR', 0], ['LWR', 1], ['RSE', 2], ['NUM', 3], ['ADJ', 4]],
+    v => state.layer === v, v => { state.layer = v; });
+  const refreshLocks = group('locks', [['Caps Lock', 'caps'], ['Num Lock', 'num'], ['Scroll Lock', 'scroll']],
+    v => state[v], v => { state[v] = !state[v]; });
+  let sky = 23;
+  const refreshSky = group('sky', [['Ночь', 23], ['Рассвет', 6], ['День', 12], ['Закат', 19], ['Как сейчас', -1]],
+    v => sky === v, v => { sky = v; if (ex) ex.demo_set_hour(v < 0 ? new Date().getHours() : v); });
+
+  const QUICK = [['A', 4, 0], ['7', 0x24, 0], ['!', 0x1E, 1], ['?', 0x38, 1], ['Enter', 0x28, 0], ['Пробел', 0x2C, 0], ['F5', 0x3E, 0], ['↑', 0x52, 0]];
+  const keysBox = document.getElementById('keys');
+  QUICK.forEach(([label, kc, sh]) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.addEventListener('click', () => press(kc, sh));
+    keysBox.appendChild(b);
+  });
+  document.getElementById('sleep').addEventListener('click', () => { state.last = performance.now() - (SLEEP_MS - 5000); });
+  document.getElementById('off').addEventListener('click', () => { state.last = performance.now() - (OFF_MS - 3000); });
+
+  // --- клавиатура браузера → коды QMK ---
+  const CODE = { Enter: 0x28, Escape: 0x29, Backspace: 0x2A, Tab: 0x2B, Space: 0x2C, Minus: 0x2D, Equal: 0x2E,
+    BracketLeft: 0x2F, BracketRight: 0x30, Backslash: 0x31, Semicolon: 0x33, Quote: 0x34, Backquote: 0x35,
+    Comma: 0x36, Period: 0x37, Slash: 0x38, CapsLock: 0x39, PrintScreen: 0x46, ScrollLock: 0x47, Insert: 0x49,
+    Home: 0x4A, PageUp: 0x4B, Delete: 0x4C, End: 0x4D, PageDown: 0x4E, ArrowRight: 0x4F, ArrowLeft: 0x50,
+    ArrowDown: 0x51, ArrowUp: 0x52, NumLock: 0x53, NumpadDivide: 0x54, NumpadMultiply: 0x55, NumpadSubtract: 0x56,
+    NumpadAdd: 0x57, NumpadEnter: 0x58, Numpad0: 0x62, NumpadDecimal: 0x63,
+    ControlLeft: 0xE0, ShiftLeft: 0xE1, AltLeft: 0xE2, MetaLeft: 0xE3, ControlRight: 0xE4, ShiftRight: 0xE5, AltRight: 0xE6, MetaRight: 0xE7 };
+  function qmkCode(code) {
+    if (/^Key[A-Z]$/.test(code)) return 4 + code.charCodeAt(3) - 65;
+    if (/^Digit[0-9]$/.test(code)) { const d = +code[5]; return d === 0 ? 0x27 : 0x1E + d - 1; }
+    if (/^Numpad[1-9]$/.test(code)) return 0x59 + +code[6] - 1;
+    const f = /^F([0-9]{1,2})$/.exec(code); if (f && +f[1] <= 12) return 0x3A + +f[1] - 1;
+    return CODE[code] || 0;
+  }
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return;
+    if (e.ctrlKey || e.metaKey) { if (!/^(Control|Meta)/.test(e.code)) return; }
+    const kc = qmkCode(e.code);
+    if (!kc) return;
+    if (e.code !== 'Tab') e.preventDefault();
+    if (e.code === 'CapsLock') state.caps = e.getModifierState('CapsLock');
+    if (e.code === 'NumLock') state.num = !state.num;
+    if (e.code === 'ScrollLock') state.scroll = !state.scroll;
+    refreshLocks();
+    press(kc, e.shiftKey && !/^Shift/.test(e.code) ? 1 : 0);
+  });
+
+  function touch() { state.last = performance.now(); }
+  function press(kc, shift) { touch(); if (ex) ex.demo_key(kc, shift); }
+
+  // --- экран ---
+  const cv = document.getElementById('oled'), ctx = cv.getContext('2d'), img = ctx.createImageData(32, 128);
+  function draw() {
+    const on = ex.demo_is_on();
+    const px = new Uint8Array(ex.memory.buffer, ex.demo_screen(), 4096);
+    for (let i = 0; i < 4096; i++) {
+      const o = i * 4, lit = on && px[i];
+      img.data[o] = lit ? 70 : 3; img.data[o + 1] = lit ? 175 : 6; img.data[o + 2] = lit ? 255 : 13; img.data[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    const idle = performance.now() - state.last;
+    note.textContent = !on ? 'Экран погас. Нажмите любую клавишу.' : idle > SLEEP_MS ? 'Снегирь спит.' : '';
+    document.getElementById('idle').textContent = 'Без нажатий: ' + Math.floor(idle / 1000) + ' с';
+  }
+  function loop(t) {
+    const idle = Math.max(0, t - state.last);
+    ex.demo_tick(Math.floor(t) >>> 0, Math.floor(idle), state.layer,
+      (state.num ? 1 : 0) | (state.caps ? 2 : 0) | (state.scroll ? 4 : 0));
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // --- запуск WebAssembly ---
+  try {
+    const b64 = document.getElementById('wasm').textContent.trim();
+    const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    WebAssembly.instantiate(bin, {}).then(({ instance }) => {
+      ex = instance.exports;
+      ex.demo_set_hour(23);
+      requestAnimationFrame(loop);
+    }).catch(err => { note.innerHTML = '<span class="error">Не удалось запустить WebAssembly: ' + err.message + '</span>'; });
+  } catch (err) {
+    note.innerHTML = '<span class="error">Не удалось загрузить демо: ' + err.message + '</span>';
+  }
+})();
+</script>
+</body>
+</html>
