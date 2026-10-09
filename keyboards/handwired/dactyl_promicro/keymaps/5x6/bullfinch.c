@@ -381,3 +381,28 @@ void bullfinch_process_record(uint16_t kc, keyrecord_t *record) {
     }
     bf_key[0] = '?';
 }
+
+// ---- Передача последней клавиши на вторую половину ------------------
+// Нажатия обрабатывает только половина с USB; если экран стоит на другой,
+// она узнаёт о клавише отсюда.
+#include "transactions.h"
+
+static void bf_key_rx(uint8_t in_len, const void *in_data, uint8_t out_len, void *out_data) {
+    if (in_len == sizeof(bf_key)) {
+        memcpy(bf_key, in_data, sizeof(bf_key));
+        bf_key[sizeof(bf_key) - 1] = 0;
+        bf_hop = 2;   // снегирь вздрагивает и на второй половине
+    }
+}
+
+void bullfinch_init(void) {
+    transaction_register_rpc(BF_SYNC_KEY, bf_key_rx);
+}
+
+void bullfinch_housekeeping(void) {
+    // bf_hop == 2 сразу после нажатия: отправляем клавишу один раз
+    if (is_keyboard_master() && bf_hop == 2) {
+        transaction_rpc_send(BF_SYNC_KEY, sizeof(bf_key), bf_key);
+        bf_hop = 1;
+    }
+}

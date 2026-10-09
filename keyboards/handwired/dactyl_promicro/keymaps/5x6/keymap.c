@@ -18,6 +18,13 @@
 
 #define SFTLLCK LSFT_T(KC_0)
 
+// Переключение языка — поставьте сочетание, настроенное в системе:
+//   LGUI(KC_SPC)  Win+Space (Windows, GNOME)     LALT(KC_LSFT)  Alt+Shift
+//   LCTL(KC_LSFT) Ctrl+Shift                      LCTL(KC_SPC)   Ctrl+Space (macOS)
+#define LANG_SW LGUI(KC_SPC)
+
+#define CLOSE_W LALT(KC_F4)   // RAISE + X — закрыть окно
+
 enum custom_keycodes {
     DRAG_SCROLL = RAISE,
 };
@@ -64,7 +71,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LCTL, KC_Z  , KC_X  , KC_C  , KC_V  , KC_B  ,                         KC_N  , KC_M  ,KC_COMM,KC_DOT ,KC_SLSH,KC_BSLS,
                          KC_LBRC,KC_RBRC,                                                       KC_PLUS, KC_EQL,
                                          RAISE,KC_SPC,                          KC_BSPC, LOWER,
-                                         KC_LALT,KC_HOME,                       _______, KC_ENT,
+                                         KC_LALT,KC_HOME,                       LANG_SW, KC_ENT,
                                          KC_LGUI,KC_GRV,                        KC_DEL, KC_RALT
     ),
 
@@ -84,7 +91,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
           KC_F12 , KC_F1 , KC_F2 , KC_F3 , KC_F4 , KC_F5 ,                        KC_F6  , KC_F7 , KC_F8 , KC_F9 ,KC_F10 ,KC_F11 ,
           KC_CAPS,_______,KC_UP  ,_______,KC_LBRC,KC_RBRC,                        KC_BTN1,KC_BTN2,KC_NUM ,KC_INS ,KC_SCRL,KC_MUTE,
           KC_LSFT,KC_LEFT,KC_DOWN,KC_RGHT,_______,KC_LPRN,                        KC_LEFT,KC_DOWN,KC_UP  ,KC_RGHT,_______,KC_VOLU,
-          _______,_______,_______,_______,_______,_______,                        KC_RPRN,KC_MPRV,KC_MPLY,KC_MNXT,_______,KC_VOLD,
+          _______,_______,CLOSE_W,_______,_______,_______,                        KC_RPRN,KC_MPRV,KC_MPLY,KC_MNXT,_______,KC_VOLD,
                                                   _______,_______,            _______, KC_EQL,
                                                   _______,KC_TRNS,            _______,_______,
                                                   _______,_______,            _______, KC_DEL,
@@ -124,8 +131,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #ifdef OLED_ENABLE
     bullfinch_process_record(keycode, record);
 #endif
-    if (keycode == DRAG_SCROLL && record->event.pressed) {
-        set_scrolling = !set_scrolling;
+    // Скролл трекболом, пока зажат RAISE
+    if (keycode == DRAG_SCROLL) {
+        set_scrolling = record->event.pressed;
     }
     switch (keycode) {
         case SKY_NEXT:
@@ -141,4 +149,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return true;
     }
     return true;
+}
+
+void keyboard_post_init_user(void) {
+    bullfinch_init();
+}
+
+void housekeeping_task_user(void) {
+    bullfinch_housekeeping();
 }

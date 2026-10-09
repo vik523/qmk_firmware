@@ -31,3 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SPLIT_LAYER_STATE_ENABLE
 #define SPLIT_LED_STATE_ENABLE
 #define SPLIT_ACTIVITY_ENABLE
+
+// Последняя нажатая клавиша для половины без USB (bullfinch.c)
+#define SPLIT_TRANSACTION_IDS_USER BF_SYNC_KEY

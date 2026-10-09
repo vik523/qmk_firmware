@@ -20,3 +20,7 @@ bool bullfinch_render(void);
 void bullfinch_set_sky(uint8_t sky);  // вручную
 void bullfinch_next_sky(void);        // по кругу: ночь → рассвет → день → закат
 void bullfinch_set_hour(uint8_t hour); // по часу 0..23 (например, из Raw HID)
+
+// Передача последней клавиши на половину без USB (если экран стоит на ней)
+void bullfinch_init(void);          // вызвать из keyboard_post_init_user
+void bullfinch_housekeeping(void);  // вызвать из housekeeping_task_user
