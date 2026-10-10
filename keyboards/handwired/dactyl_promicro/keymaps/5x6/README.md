@@ -101,5 +101,7 @@ make handwired/dactyl_promicro:5x6
 - `bullfinch.c`, `bullfinch.h`, `bf_data.inc` — сцена и спрайты
 - `bullfinch_time.py` — отправка часа с компьютера по Raw HID
 - `trackball.c`, `trackball.h` — скролл, точный режим, CPI, автослой мыши
+- `flash_caterina.ps1` — прошивка готового `.hex` через avrdude без пересборки
+  (ждёт загрузчик сам; запускать по разу на каждую половину)
 - `demo/` — браузерное демо; `demo/build.sh` пересобирает его из текущего `bullfinch.c`
   (нужны `clang` и `wasm-ld`)
