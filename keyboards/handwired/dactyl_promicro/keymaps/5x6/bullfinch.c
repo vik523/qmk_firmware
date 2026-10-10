@@ -32,6 +32,11 @@
 #ifndef BF_LAYER_ADJ
 #    define BF_LAYER_ADJ 4
 #endif
+#ifndef BF_KEY_SCALE
+#    define BF_KEY_SCALE 2           // размер буквы на сугробе: 1 — шрифт 3x5, 2 — 6x10
+#endif
+#define BF_KEY_Y     (127 - 5 * BF_KEY_SCALE - 1)   // верх надписи
+#define BF_DRIFT_TOP (BF_KEY_Y - 4)                  // верх сугроба
 #ifndef BF_BERRY_EVERY
 #    define BF_BERRY_EVERY 450       // раз в сколько кадров падает ягода (450 × 100 мс = 45 с)
 #endif
@@ -188,16 +193,26 @@ static void lantern(uint8_t x, uint8_t y) {   // Scroll Lock: звёздочка
 }
 
 static void drift(void) {
-    for (uint8_t x = 0; x < 32; x++) {
-        uint8_t tp = 116 + (int8_t)pgm_read_byte(&drift_h[x]);
-        for (uint8_t y = tp; y < 128; y++) px(x, y, y == tp || (x % 3 == 0 && y % 3 == 0));
-    }
+    // Надпись — на чистом снегу: точечная текстура сугроба вокруг неё не рисуется,
+    // иначе мелкие буквы сливаются с точками
     uint8_t len = strlen(bf_key);
-    if (!len) return;
-    uint8_t w = len * 4 - 1, x = (32 - w) / 2;
-    for (uint8_t y = 119; y < 127; y++)
-        for (int16_t i = x - 1; i <= x + w; i++) px(i, y, false);
-    for (uint8_t i = 0; i < len; i++) draw_char(x + i * 4, 120, bf_key[i], true);
+    uint8_t w   = len ? len * 4 * BF_KEY_SCALE - BF_KEY_SCALE : 0;
+    uint8_t kx  = (32 - w) / 2;
+    for (uint8_t x = 0; x < 32; x++) {
+        uint8_t tp    = BF_DRIFT_TOP + (int8_t)pgm_read_byte(&drift_h[x]);
+        bool    clear = len && x + 2 >= kx && x <= kx + w + 1;
+        for (uint8_t y = tp; y < 128; y++)
+            px(x, y, y == tp || (!clear && x % 3 == 0 && y % 3 == 0));
+    }
+    for (uint8_t i = 0; i < len; i++) {
+        uint16_t g = pgm_read_word(&font3x5[(uint8_t)bf_key[i] - 32]);
+        for (uint8_t r = 0; r < 5; r++)
+            for (uint8_t k = 0; k < 3; k++)
+                if (g & (1u << (14 - (r * 3 + k))))
+                    for (uint8_t dy = 0; dy < BF_KEY_SCALE; dy++)
+                        for (uint8_t dx = 0; dx < BF_KEY_SCALE; dx++)
+                            px(kx + (i * 4 + k) * BF_KEY_SCALE + dx, BF_KEY_Y + r * BF_KEY_SCALE + dy, true);
+    }
 }
 
 static void sprite(const uint32_t *rows, const uint32_t *mask, uint8_t h, int16_t x0, int16_t y0) {
@@ -285,15 +300,15 @@ bool bullfinch_render(void) {
         if (!(bf_berry_t && i == last)) berry(pgm_read_byte(&L->bx[i]), pgm_read_byte(&L->by[i]), led.num_lock);
     if (bf_berry_t) {
         int16_t y = lby + bf_berry_t * 2, x = lbx + ((bf_berry_t >> 2) & 1);
-        if (y > 111) y = 111;
+        if (y > BF_DRIFT_TOP - 4) y = BF_DRIFT_TOP - 4;   // лежит на сугробе
         berry(x, y, led.num_lock);
-        if (++bf_berry_t > (111 - lby) / 2 + 25) bf_berry_t = 0;
+        if (++bf_berry_t > (BF_DRIFT_TOP - 4 - lby) / 2 + 25) bf_berry_t = 0;
     }
 
     if (led.scroll_lock) {   // фонарик висит под веткой слева
         uint8_t lx = pgm_read_byte(&L->br_x0) + 4;
         line(lx, bry + 2, lx, bry + 4);
-        lantern(lx, bry + 7);
+        lantern(lx, bry + 7 < BF_DRIFT_TOP - 3 ? bry + 7 : BF_DRIFT_TOP - 3);
     }
 
     // ---- снегирь ----
