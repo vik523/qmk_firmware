@@ -103,5 +103,7 @@ make handwired/dactyl_promicro:5x6
 - `trackball.c`, `trackball.h` — скролл, точный режим, CPI, автослой мыши
 - `flash_caterina.ps1` — прошивка готового `.hex` через avrdude без пересборки
   (ждёт загрузчик сам; запускать по разу на каждую половину)
+- `dactyl-5x6-shpargalka.html` — шпаргалка по слоям на один лист A4 (альбомный):
+  открыть в браузере и напечатать в PDF
 - `demo/` — браузерное демо; `demo/build.sh` пересобирает его из текущего `bullfinch.c`
   (нужны `clang` и `wasm-ld`)

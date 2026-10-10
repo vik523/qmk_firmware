@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Dactyl 5x6 — шпаргалка</title>
+<style>
+@page { size: A4 landscape; margin: 7mm; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: "Segoe UI", "DejaVu Sans", Arial, sans-serif; color: #1f2937; width: 283mm; }
+header { display: flex; justify-content: space-between; align-items: baseline; height: 8mm; }
+h1 { font-size: 14pt; margin: 0; }
+.legend { font-size: 7.5pt; color: #4b5563; display: flex; gap: 5mm; }
+.legend i { display: inline-block; width: 3.2mm; height: 3.2mm; border-radius: .7mm; vertical-align: -0.6mm; margin-right: 1mm; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 60.5mm); gap: 2.5mm; }
+.panel { border: .25mm solid #d1d5db; border-radius: 2mm; padding: 2mm 2.6mm; overflow: hidden; }
+h2 { font-size: 10pt; margin: 0; }
+.sub { font-size: 6.5pt; color: #6b7280; margin: .2mm 0 1.2mm; }
+.kb { position: relative; width: 80mm; height: 44.2mm; margin: 0 auto; }
+.k { position: absolute; width: 5.9mm; height: 5.9mm; border-radius: 1mm; display: flex; align-items: center; justify-content: center;
+     font-size: 6.6pt; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap;
+     border: .25mm solid #6b7280; background: #fff; }
+.k.s { font-size: 4.6pt; }
+.k.xs { font-size: 3.7pt; }
+.k.t { border-color: transparent; background: #eef0f2; }
+.k.l { background: #dbe4f3; }
+.k.h { background: #1f2937; color: #fff; border-color: #1f2937; }
+.k.x { background: #f9d6d2; border-color: #c0392b; }
+.i-t { background: #eef0f2; } .i-l { background: #dbe4f3; border: .25mm solid #6b7280; }
+.i-h { background: #1f2937; } .i-x { background: #f9d6d2; border: .25mm solid #c0392b; }
+table { border-collapse: collapse; font-size: 7.4pt; width: 100%; margin-top: 1mm; }
+td { padding: .35mm 0; vertical-align: top; }
+td:first-child { font-weight: 700; width: 47%; }
+td:last-child { color: #4b5563; }
+ul { margin: 1mm 0 0; padding-left: 3.4mm; font-size: 7.2pt; line-height: 1.32; }
+li { margin-bottom: .55mm; }
+b { font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Dactyl 5x6 — шпаргалка</h1>
+  <div class="legend">
+    <span><i class="i-t"></i>как в QWR</span>
+    <span><i class="i-l"></i>клавиша слоя</span>
+    <span><i class="i-h"></i>держите</span>
+    <span><i class="i-x"></i>служебная</span>
+  </div>
+</header>
+<div class="grid">
+  <div class="panel"><h2>QWR — базовый</h2><div class="sub">Работает всегда. Снегирь на средней ветке.</div><div class="kb" id="qwr"></div></div>
+  <div class="panel"><h2>LOWER — символы и цифры</h2><div class="sub">Держать LOWER. Снегирь на нижней ветке. Цифры — Numpad.</div><div class="kb" id="lwr"></div></div>
+  <div class="panel"><h2>RAISE — F-клавиши, стрелки, медиа</h2><div class="sub">Держать RAISE. Снегирь на верхней ветке. Шар крутит страницу.</div><div class="kb" id="rse"></div></div>
+  <div class="panel"><h2>NUM — цифровой блок</h2><div class="sub">Вкл./выкл. клавишей TG NUM (включается из ADJ). Снегирь с ягодой в клюве.</div><div class="kb" id="num"></div></div>
+  <div class="panel"><h2>ADJ — настройки</h2><div class="sub">Держать LOWER + RAISE. Снегирь в полёте.</div><div class="kb" id="adj"></div></div>
+  <div class="panel"><h2>МЫШЬ — включается сама</h2><div class="sub">Пока двигается шар и ещё 0,65 с. Любая обычная клавиша выключает слой.</div><div class="kb" id="mse"></div></div>
+
+  <div class="panel"><h2>Экран</h2>
+    <table>
+      <tr><td>Средняя / нижняя / верхняя ветка</td><td>слой QWR / LOWER / RAISE</td></tr>
+      <tr><td>Ягода в клюве</td><td>слой NUM</td></tr>
+      <tr><td>В полёте</td><td>слой ADJ</td></tr>
+      <tr><td>Снежная шапка</td><td>Caps Lock</td></tr>
+      <tr><td>Ягоды светятся</td><td>Num Lock</td></tr>
+      <tr><td>Фонарик под веткой</td><td>Scroll Lock</td></tr>
+      <tr><td>Надпись на сугробе</td><td>последняя клавиша</td></tr>
+      <tr><td>Месяц, солнце, закат</td><td>время суток (клавиша «Небо»)</td></tr>
+      <tr><td>Нахохлился, «Z»</td><td>30 с без нажатий</td></tr>
+      <tr><td>Экран погас</td><td>5 мин без нажатий</td></tr>
+      <tr><td>Падает ягода</td><td>раз в 45 с, просто так</td></tr>
+    </table>
+  </div>
+  <div class="panel"><h2>Трекбол</h2>
+    <ul>
+      <li><b>Скролл:</b> держать RAISE или <b>Скр</b> (G / H) и крутить шар. Идёт по одной оси: первое движение выбирает вертикаль или горизонталь.</li>
+      <li><b>Скр вкл</b> (B / N) — скролл защёлкой: нажал — включён, ещё раз — выключен.</li>
+      <li><b>Точно</b> (A / ;) — держать: курсор в 4 раза медленнее.</li>
+      <li><b>ЛКМ</b> F / J, <b>СКМ</b> D / K, <b>ПКМ</b> S / L, <b>Назад / Вперёд</b> C V / M ,</li>
+      <li><b>CPI− / CPI+</b> (ADJ + D / F): шаг 200, от 200 до 4000, по умолчанию 1200. Запоминается после отключения кабеля.</li>
+      <li><b>Авто</b> (ADJ + G) — выключить или включить автослой мыши, например для игр.</li>
+    </ul>
+  </div>
+  <div class="panel"><h2>Важно</h2>
+    <ul>
+      <li><b>Яз</b> — смена языка (Win + Space), правый большой палец.</li>
+      <li><b>RAISE + X</b> — Alt + F4, закрыть окно.</li>
+      <li>Курсор не двигается, а страница крутится — выключите защёлку скролла (<b>Скр вкл</b>).</li>
+      <li><b>NUM</b> держится сам и перекрывает часть правой половины. Выход — тот же TG NUM.</li>
+      <li><b>Небо:</b> ночь → рассвет → день → закат.</li>
+      <li><b>BOOT</b> сразу переводит половину с USB в режим прошивки.</li>
+      <li>Прошивать нужно обе половины: экран рисует та, в которую воткнут кабель.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// Порядок как в LAYOUT_5x6: 4 ряда по 12, затем L2 L3 R2 R3, затем три ряда больших пальцев L4 L5 R0 R1.
+// '' — прозрачная клавиша; префиксы: '>' клавиша слоя, '!' держите, '#' служебная.
+const L = {
+  qwr: ['Esc','1','2','3','4','5','6','7','8','9','0','Bksp',
+        'Tab','Q','W','E','R','T','Y','U','I','O','P','-',
+        'Shift','A','S','D','F','G','H','J','K','L',';',"'",
+        'Ctrl','Z','X','C','V','B','N','M',',','.','/','\\',
+        '[',']','+','=',
+        '>RAISE','Space','Bksp','>LOWER',
+        'Alt','Home','Яз','Enter',
+        'Win','`','Del','RAlt'],
+  lwr: ['~','!','@','#','$','%','^','&','*','(',')','Del',
+        '','','','','','[',']','7','8','9','','+',
+        '','Home','PgUp','PgDn','End','(',')','4','5','6','-','|',
+        '','','','','','','PrtSc','1','2','3','=','_',
+        '','PrtSc','','0',
+        '','','','!LOWER',
+        '','End','','',
+        '','','',''],
+  rse: ['F12','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11',
+        'Caps','','↑','','[',']','ЛКМ','ПКМ','NumLk','Ins','ScrLk','Mute',
+        'Shift','←','↓','→','','(','←','↓','↑','→','','Vol+',
+        '','','Alt+F4','','','',')','Prev','Play','Next','','Vol−',
+        '','','','=',
+        '!RAISE','','','',
+        '','','','Del',
+        '','','',''],
+  num: ['','','','','','','','NumLk','/','*','-','',
+        '','','','','','','','7','8','9','+','',
+        '','','','','','','','4','5','6','+','',
+        '','','','','','','','1','2','3','Enter','',
+        '','','0','.',
+        '','','','',
+        '','','','',
+        '','','','#TG NUM'],
+  adj: ['#BOOT','','','','','','','','','','','#BOOT',
+        '','','','','','','','#TG NUM','','','','',
+        '','','','','','#Небо','#Небо','','','','','',
+        '','','','#CPI−','#CPI+','#Авто','','','','','','',
+        '','','','',
+        '!RAISE','','','!LOWER',
+        '','','','',
+        '','','',''],
+  mse: ['','','','','','','','','','','','',
+        '','','','','','','','','','','','',
+        '','Точно','ПКМ','СКМ','ЛКМ','Скр','Скр','ЛКМ','СКМ','ПКМ','Точно','',
+        '','','','Назад','Вперёд','Скр вкл','Скр вкл','Назад','Вперёд','','','',
+        '','','','',
+        '','','','',
+        '','','','',
+        '','','',''],
+};
+const P = 6.3, GAP = 4.4;            // шаг клавиш и зазор между половинами, мм
+const X = c => c < 6 ? c * P : 6 * P + GAP + (c - 6) * P;
+function pos(i) {                    // индекс в LAYOUT_5x6 -> [колонка 0..11, ряд 0..6]
+  if (i < 48) return [i % 12, Math.floor(i / 12)];
+  if (i < 52) return [[2, 3, 8, 9][i - 48], 4];
+  const j = i - 52;
+  return [[4, 5, 6, 7][j % 4], 4 + Math.floor(j / 4)];
+}
+for (const [id, keys] of Object.entries(L)) {
+  const kb = document.getElementById(id);
+  keys.forEach((raw, i) => {
+    const [c, r] = pos(i);
+    const d = document.createElement('div');
+    let cls = 'k', t = raw;
+    if (!t) cls += ' t';
+    else if (t.length > 1 && '>!#'.includes(t[0])) { cls += ' ' + { '>': 'l', '!': 'h', '#': 'x' }[t[0]]; t = t.slice(1); }
+    if (t.length > 5) cls += ' xs'; else if (t.length > 2) cls += ' s';
+    if (t.includes(' ')) { d.style.whiteSpace = 'normal'; }
+    d.className = cls;
+    d.textContent = t;
+    d.style.left = X(c) + 'mm';
+    d.style.top = r * P + 'mm';
+    kb.appendChild(d);
+  });
+}
+</script>
+</body>
+</html>
