@@ -1,5 +1,6 @@
 #include QMK_KEYBOARD_H
 #include "bullfinch.h"
+#include "trackball.h"
 #ifdef RAW_ENABLE
 #    include "raw_hid.h"
 #endif
@@ -12,6 +13,7 @@
 #define _RAISE 2
 #define _NUM 3      // цифровой блок, включается TG(_NUM) из слоя ADJ
 #define _ADJ 4      // LOWER + RAISE одновременно
+#define _MOUSE 5    // включается сам при движении шара (trackball.c)
 
 #define RAISE MO(_RAISE)
 #define LOWER MO(_LOWER)
@@ -25,26 +27,9 @@
 
 #define CLOSE_W LALT(KC_F4)   // RAISE + X — закрыть окно
 
-enum custom_keycodes {
-    DRAG_SCROLL = RAISE,
-};
-
-// Отдельный enum: DRAG_SCROLL выше равен RAISE, поэтому SAFE_RANGE считаем отсюда
 enum bullfinch_keycodes {
     SKY_NEXT = SAFE_RANGE,   // сменить время суток: ночь → рассвет → день → закат
 };
-
-bool set_scrolling = false;
-
-report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
-    if (set_scrolling) {
-        mouse_report.h = mouse_report.x;
-        mouse_report.v = mouse_report.y;
-        mouse_report.x = 0;
-        mouse_report.y = 0;
-    }
-    return mouse_report;
-}
 
 #ifdef OLED_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
@@ -115,7 +100,20 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         QK_BOOT,_______,_______,_______,_______,_______,                        _______,_______,_______,_______,_______,QK_BOOT,
         _______,_______,_______,_______,_______,_______,                        _______,TG(_NUM),_______,_______,_______,_______,
         _______,_______,_______,_______,_______,SKY_NEXT,                       SKY_NEXT,_______,_______,_______,_______,_______,
+        _______,_______,_______,TB_CPID,TB_CPIU,TB_AUTO,                        _______,_______,_______,_______,_______,_______,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,_______,
+                                                _______,_______,            _______,_______
+    ),
+
+    // Мышь: включается сам, когда двигается шар, и гаснет через 0,65 с после остановки
+    // или от любой обычной клавиши. Кнопки на обеих руках.
+    [_MOUSE] = LAYOUT_5x6(
         _______,_______,_______,_______,_______,_______,                        _______,_______,_______,_______,_______,_______,
+        _______,_______,_______,_______,_______,_______,                        _______,_______,_______,_______,_______,_______,
+        _______,TB_SNIP,KC_BTN2,KC_BTN3,KC_BTN1,TB_SCRL,                        TB_SCRL,KC_BTN1,KC_BTN3,KC_BTN2,TB_SNIP,_______,
+        _______,_______,_______,KC_BTN4,KC_BTN5,TB_SCLK,                        TB_SCLK,KC_BTN4,KC_BTN5,_______,_______,_______,
                                                 _______,_______,            _______,_______,
                                                 _______,_______,            _______,_______,
                                                 _______,_______,            _______,_______,
@@ -131,10 +129,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #ifdef OLED_ENABLE
     bullfinch_process_record(keycode, record);
 #endif
+    if (!trackball_process_record(keycode, record)) return false;
     // Скролл трекболом, пока зажат RAISE
-    if (keycode == DRAG_SCROLL) {
-        set_scrolling = record->event.pressed;
-    }
+    if (keycode == RAISE) trackball_scroll(record->event.pressed);
     switch (keycode) {
         case SKY_NEXT:
             if (record->event.pressed) bullfinch_next_sky();

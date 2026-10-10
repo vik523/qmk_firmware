@@ -34,3 +34,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Последняя нажатая клавиша для половины без USB (bullfinch.c)
 #define SPLIT_TRANSACTION_IDS_USER BF_SYNC_KEY
+
+// ---- Трекбол (trackball.c) ----
+// Слой мыши включается сам при движении шара
+#define POINTING_DEVICE_AUTO_MOUSE_ENABLE
+#define AUTO_MOUSE_DEFAULT_LAYER 5   // = _MOUSE в keymap.c
+#define AUTO_MOUSE_THRESHOLD 15      // нечаянное касание шара слой не включит
+//#define AUTO_MOUSE_TIME 650        // сколько мс слой живёт после остановки шара
+//#define TB_SCROLL_DIV 12           // больше — медленнее скролл
+//#define TB_SNIPE_DIV 4             // во сколько раз медленнее точный режим
+//#define TB_SCROLL_INVERT_V         // если скролл идёт не в ту сторону
+//#define TB_SCROLL_NO_AXIS_LOCK     // свободный скролл по диагонали

@@ -265,7 +265,11 @@ bool bullfinch_render(void) {
 
     drift();
 
-    uint8_t layer = get_highest_layer(layer_state | default_layer_state);
+    layer_state_t ls = layer_state;
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+    ls = remove_auto_mouse_layer(ls, true);   // слой мыши снегирь не замечает
+#endif
+    uint8_t layer = get_highest_layer(ls | default_layer_state);
     uint8_t li = layer == BF_LAYER_LOWER ? LY_LWR : layer == BF_LAYER_RAISE ? LY_RSE
                : layer == BF_LAYER_NUM   ? LY_NUM : layer == BF_LAYER_ADJ   ? LY_ADJ : LY_QWR;
     const bf_layout_t *L = &layouts[li];
