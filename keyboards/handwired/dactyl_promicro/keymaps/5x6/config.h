@@ -22,6 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Таймаут стандартного драйвера выключаем: экраном управляет bullfinch.c
 // (засыпание через BF_SLEEP_MS, выключение через BF_OFF_MS)
 #define OLED_TIMEOUT 0
+// Драйвер шлёт на экран по одному блоку (8 строк) за цикл, начиная с верхнего, а сцена
+// каждые 100 мс перерисовывается целиком: до нижних блоков с надписью очередь не доходила
+#define OLED_UPDATE_PROCESS_LIMIT 4
 //#define OLED_BRIGHTNESS 120
 //#define BF_SLEEP_MS 30000
 //#define BF_OFF_MS   300000
